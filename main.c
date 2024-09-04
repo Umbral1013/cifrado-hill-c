@@ -17,8 +17,7 @@
 #include <string.h>
 #include <ctype.h>
 
-// Solamente funcionara con matrices de 2x2.
-float determinante(int n, int matriz[][n])
+int determinante(int n, int matriz[][n])
 {
 	int determinante;
 	int a, b, c, d;
@@ -28,7 +27,7 @@ float determinante(int n, int matriz[][n])
 	c = matriz[0][1];
 	d = matriz[1][0];
 
-	// La diagonal principal por la diagonal secundaria.
+	// La diagonal principal menos la diagonal secundaria.
 	determinante = a*d - b*c;
 
 	return determinante;
@@ -39,7 +38,7 @@ void llenarMatrizAleatorios(int n, int matriz[][n], int min, int max)
 	// Impide que min sea mayor que max.
 	if (min > max) return;
 
-	int r;
+	int entrada;
 
 	srand(time(NULL));
 	for (int i=0; i < n; i++) {
@@ -48,8 +47,8 @@ void llenarMatrizAleatorios(int n, int matriz[][n], int min, int max)
 			 * contexto de la criptografia. De todos modos, esto es
 			 * solo una demostracion.
 			 */
-			r = rand() % (max + 1 - min) + min;
-			matriz[i][j] = r;
+			entrada = rand() % (max + 1 - min) + min;
+			matriz[i][j] = entrada;
 		}
 	}
 
@@ -57,16 +56,16 @@ void llenarMatrizAleatorios(int n, int matriz[][n], int min, int max)
 
 void crearMatrizLlave(int n, int matriz[][n])
 {
-	float det = 0.0;
+	int det = 0;
 
 	while (det == 0) {
 		// 0 es A, y 25 es Z.
 		llenarMatrizAleatorios(n, matriz, 0, 25);
+		
 		det = determinante(n, matriz);
 	}
 }
 
-// Función para multiplicar un vector por la matriz. 
 void vectorPorMatriz(int n, int vector[n], int matriz[][n], int resultado [n])
 {
 	for (int i=0; i < n; i++) {
@@ -78,7 +77,6 @@ void vectorPorMatriz(int n, int vector[n], int matriz[][n], int resultado [n])
 	}
 }
 
-// Función para mostrar la matriz 2x2.
 void mostrarMatriz(int n, int matriz[][n])
 {
 	for (int i=0; i < n; i++) {
@@ -89,7 +87,6 @@ void mostrarMatriz(int n, int matriz[][n])
 	}
 }
 
-// Función para mostrar un vector.
 void mostrarVector(int n, int vector[n])
 {
 	for (int i=0; i < n; i++) {
@@ -98,16 +95,7 @@ void mostrarVector(int n, int vector[n])
         printf("\n");
 }
 
-// Separa las palabras en pares de caracteres.
-void separarPalabrasPar(int n, int vecMsgTmp[n], int *indice, char *palabra)
-{
-	for (int i=0; palabra[i] != '\0'; i+=2) {
-		vecMsgTmp[i] = 
-		printf("%c%c ", palabra[i], palabra[i+1]);
-	}
-	printf("\n");
-}
-
+// Aqui esta el problema.
 void invertirMatriz(int n, int matriz[][n], int inversa[][n]) 
 {
     	int det;
@@ -131,18 +119,19 @@ void invertirMatriz(int n, int matriz[][n], int inversa[][n])
 
 void escribirMatrizLlave(int n, int matrizLlave[][n], char *path)
 {           
-	// Escribir en el archivo.
         FILE *file = fopen(path, "w");
         if (file == NULL) {
                 printf("No se pudo abrir el archivo.\n");
                 return;
         }
 
+	// Escribir en el archivo.
         for (int i=0; i < n; i++) {
         	for (int j=0; j < n; j++) {
         		fprintf(file, "%d,", matrizLlave[i][j]);
         	}
         }
+	
         fclose(file);
 }
 
@@ -233,6 +222,7 @@ void cifrar(int n, int matrizLlave[][n], char *palabra, char *path)
 	escribirMatrizLlave(n, matrizLlave, path);
 	printf("Se ha escrito la matriz llave en: %s\n", path);
 }
+
 void descifrar(int n, int matrizLlave[][n], char *palabraCifrada, char *path)
 {
 	const int len = 50;
@@ -247,8 +237,7 @@ void descifrar(int n, int matrizLlave[][n], char *palabraCifrada, char *path)
 	puts("Mostrando matriz llave recibida:");
 	mostrarMatriz(n, matrizLlave);
 	invertirMatriz(n, matrizLlave, matrizLlaveInversa);
-	mostrarMatriz(n, matrizLlaveInversa);
-
+	
 	printf("Teclea la palabra cifrada: ");
 	fgets(palabraCifrada, sizeof(palabraCifrada), stdin);
 
@@ -257,17 +246,11 @@ void descifrar(int n, int matrizLlave[][n], char *palabraCifrada, char *path)
 	while (palabraCifrada[i+1] != '\0') {
 		inicializarVector(n, vectorCifrado);
 		inicializarVector(n, vectorMensaje);
-
 		vectorCifrado[0] = caracterANumero(palabraCifrada[i]);
 		vectorCifrado[1] = caracterANumero(palabraCifrada[i+1]);
-
 		vectorPorMatriz(n, vectorCifrado, matrizLlaveInversa, vectorMensaje);
-
-		printf("%d, %d ", vectorMensaje[0], vectorMensaje[1]);
-		/*
 		palabra[i] = 'A' + vectorMensaje[0];
 		palabra[i+1] = 'A' + vectorMensaje[1];
-		*/
 		i += 2;
 		j++;
 	}
@@ -286,9 +269,11 @@ int main(void)
 	int eleccion;
 
 	eleccion = 0;
+	printf("Cifrado Hill.\n");
 	printf("Quieres cifrar o descifrar un mensaje?\n");
 	printf("1) Cifrar\n");
 	printf("2) Descifrar\n");
+	printf(">> ");
 	scanf("%d", &eleccion);
 	getchar();
 	
