@@ -102,8 +102,10 @@ void invertirMatriz(int n, int matriz[][n], int inversa[][n])
 	int ecuacion;
 	int escalar;
 
-	det = (int) determinante(n, matriz);
+	// Debimos haber visto el algoritmo extendido de Euclides.
+	det = determinante(n, matriz);
 	ecuacion = 0;
+	escalar = 0;
 	for (int i=0; i < 26; i++) {
 		ecuacion = (i * det) % 26;
 		if (ecuacion == 1) {
@@ -111,6 +113,8 @@ void invertirMatriz(int n, int matriz[][n], int inversa[][n])
 			break;
 		}
 	}
+
+	// Esto es lo que esta mal, creo. Le falta algo.
     	inversa[0][0] = (matriz[1][1] * escalar) % 26;
     	inversa[0][1] = (matriz[0][1] * escalar) % 26;
     	inversa[1][0] = (matriz[1][0] * escalar) % 26;
