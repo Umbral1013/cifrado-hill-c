@@ -110,12 +110,23 @@ void separarPalabrasPar(int n, int vecMsgTmp[n], int *indice, char *palabra)
 
 void invertirMatriz(int n, int matriz[][n], int inversa[][n]) 
 {
-    	float det = determinante(n, matriz);
+    	int det;
+	int ecuacion;
+	int escalar;
 
-    	inversa[0][0] = matriz[1][1] / det;
-    	inversa[0][1] = -1*matriz[0][1] / det;
-    	inversa[1][0] = -1*matriz[1][0] / det;
-    	inversa[1][1] = matriz[0][0] / det;
+	det = (int) determinante(n, matriz);
+	ecuacion = 0;
+	for (int i=0; i < 26; i++) {
+		ecuacion = (i * det) % 26;
+		if (ecuacion == 1) {
+			escalar = i;
+			break;
+		}
+	}
+    	inversa[0][0] = (matriz[1][1] * escalar) % 26;
+    	inversa[0][1] = (matriz[0][1] * escalar) % 26;
+    	inversa[1][0] = (matriz[1][0] * escalar) % 26;
+    	inversa[1][1] = (matriz[0][0] * escalar) % 26;
 }
 
 void escribirMatrizLlave(int n, int matrizLlave[][n], char *path)
@@ -222,47 +233,53 @@ void cifrar(int n, int matrizLlave[][n], char *palabra, char *path)
 	escribirMatrizLlave(n, matrizLlave, path);
 	printf("Se ha escrito la matriz llave en: %s\n", path);
 }
-
 void descifrar(int n, int matrizLlave[][n], char *palabraCifrada, char *path)
 {
 	const int len = 50;
 
-	int matrizLlaveInversa[n][n];
-	int vectorMensaje[n]; 
-	int vectorCifrado[n];
-	char palabra[len];
 	int i, j;
+	int matrizLlaveInversa[n][n];
+	int vectorCifrado[n];
+	int vectorMensaje[n];
+	char palabra[len];
 
 	leerMatrizLlave(n, matrizLlave, path);
-	puts("Esta es la matriz llave recibida:");
+	puts("Mostrando matriz llave recibida:");
 	mostrarMatriz(n, matrizLlave);
 	invertirMatriz(n, matrizLlave, matrizLlaveInversa);
+	mostrarMatriz(n, matrizLlaveInversa);
 
 	printf("Teclea la palabra cifrada: ");
-	getchar();
 	fgets(palabraCifrada, sizeof(palabraCifrada), stdin);
 
 	i = 0;
 	j = 0;
-	while (palabra[i+1] != '\0') {
-		inicializarVector(n, vectorMensaje);
+	while (palabraCifrada[i+1] != '\0') {
 		inicializarVector(n, vectorCifrado);
+		inicializarVector(n, vectorMensaje);
+
 		vectorCifrado[0] = caracterANumero(palabraCifrada[i]);
 		vectorCifrado[1] = caracterANumero(palabraCifrada[i+1]);
+
 		vectorPorMatriz(n, vectorCifrado, matrizLlaveInversa, vectorMensaje);
+
+		printf("%d, %d ", vectorMensaje[0], vectorMensaje[1]);
+		/*
 		palabra[i] = 'A' + vectorMensaje[0];
 		palabra[i+1] = 'A' + vectorMensaje[1];
-		j++;
+		*/
 		i += 2;
+		j++;
 	}
 
-	printf("Hecho! La palabra descifrada es: %s.\n", palabra);
+	printf("Hecho! La palabra descifrada es: %s\n.", palabra);
 }
 
 int main(void)
 {
 	const int len = 50;
 	const int n = 2;
+
 	int matrizLlave[n][n];
 	char palabra[len];
 	char path[] = "llave.txt";
