@@ -19,10 +19,10 @@ float determinante(int n, int matriz[n][n])
 	return determinante;
 }
 
-void llenarMatrizAleatorios(int n, int matriz[n][n])
+void llenarMatrizAleatorios(int n, int matriz[n][n], int min, int max)
 {
-	const int max = 29; 
-	const int min = 1;
+	/* Impide que min sea mayor que max. */
+	if (min > max) return;
 
 	int r;
 
@@ -46,7 +46,7 @@ void crearMatrizLlave(int n, int matriz[n][n])
 	int det = 0;
 
 	while (det == 0) {
-		llenarMatrizAleatorios(n, matriz);
+		llenarMatrizAleatorios(n, matriz, 1, 26);
 		det = determinante(n, matriz);
 	}
 }
