@@ -16,6 +16,7 @@
 int main(void)
 {
 	printf("Hola Norma Elva.");
+	printf("Adios, Norma Elva.");
 	return 0;
 }
 
