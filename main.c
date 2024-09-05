@@ -17,19 +17,30 @@
 #include <string.h>
 #include <ctype.h>
 
+#define BASE_MOD 26
+
+int modulo(int a, int b)
+{
+	int resultado = 0;
+	
+	/* Si el determinante es negativo, tenemos que hacer esto
+	 * para conseguirlo. El compilador de C no es tan listo.
+	 */
+	if (a < 0) {
+		resultado = b - (-1*a % b);
+	} else {
+		resultado = a % b;
+	}
+
+	return resultado;
+}
+
 int determinante(int n, int matriz[][n])
 {
-	int determinante;
-	int a, b, c, d;
+	int determinante = 0;
 
-	a = matriz[0][0]; 
-	b = matriz[1][1];
-	c = matriz[0][1];
-	d = matriz[1][0];
-
-	// La diagonal principal menos la diagonal secundaria.
-	determinante = a*d - b*c;
-
+	determinante = (matriz[0][0]*matriz[1][1]) - (matriz[0][1]*matriz[1][0]);
+	determinante = modulo(determinante, BASE_MOD);
 	return determinante;
 }
 
@@ -51,17 +62,17 @@ void llenarMatrizAleatorios(int n, int matriz[][n], int min, int max)
 			matriz[i][j] = entrada;
 		}
 	}
-
 }
 
 void crearMatrizLlave(int n, int matriz[][n])
 {
+	const int min = 0;
+	const int max = 25;
+
 	int det = 0;
 
 	while (det == 0) {
-		// 0 es A, y 25 es Z.
-		llenarMatrizAleatorios(n, matriz, 0, 25);
-		
+		llenarMatrizAleatorios(n, matriz, min, max);
 		det = determinante(n, matriz);
 	}
 }
@@ -72,15 +83,14 @@ void vectorPorMatriz(int n, int vector[n], int matriz[][n], int resultado [n])
                 for (int j=0; j < n; j++) {
 			resultado[i] += (vector[j] * matriz[i][j]);
 		}
-		// Tenemos 26 simbolos, de ahi el 26, A-Z.
-		resultado[i] = resultado[i] % 26;
+		resultado[i] = modulo(resultado[i], BASE_MOD);
 	}
 }
 
 void mostrarMatriz(int n, int matriz[][n])
 {
 	for (int i=0; i < n; i++) {
-		for (int j =0; j < n; j++) {
+		for (int j=0; j < n; j++) {
 			printf("\t%d", matriz[i][j]);
 		}
                 printf("\n");
@@ -95,30 +105,23 @@ void mostrarVector(int n, int vector[n])
         printf("\n");
 }
 
-// Aqui esta el problema.
+/* Probablemente podria ser mas eficiente, pero esta fue la solucion a la que
+ * llegue.
+ */
 void invertirMatriz(int n, int matriz[][n], int inversa[][n]) 
 {
-    	int det;
-	int ecuacion;
-	int escalar;
+    	int det = determinante(n, matriz);
+    	int inversoDet = 0;
 
-	// Debimos haber visto el algoritmo extendido de Euclides.
-	det = determinante(n, matriz);
-	ecuacion = 0;
-	escalar = 0;
-	for (int i=0; i < 26; i++) {
-		ecuacion = (i * det) % 26;
-		if (ecuacion == 1) {
-			escalar = i;
-			break;
-		}
-	}
+	printf("Determinante: %d.\n", det);
+	inversoDet = modulo(det*det, BASE_MOD);
+	printf("Inverso del determinante: %d.\n", inversoDet);
 
 	// Esto es lo que esta mal, creo. Le falta algo.
-    	inversa[0][0] = (matriz[1][1] * escalar) % 26;
-    	inversa[0][1] = (matriz[0][1] * escalar) % 26;
-    	inversa[1][0] = (matriz[1][0] * escalar) % 26;
-    	inversa[1][1] = (matriz[0][0] * escalar) % 26;
+    	inversa[0][0] = modulo(matriz[1][1] * inversoDet, BASE_MOD);
+    	inversa[1][1] = modulo(matriz[0][0] * inversoDet, BASE_MOD);
+    	inversa[0][1] = modulo(-1 * matriz[0][1] * inversoDet, BASE_MOD);
+    	inversa[1][0] = modulo(-1 * matriz[1][0] * inversoDet, BASE_MOD);
 }
 
 void escribirMatrizLlave(int n, int matrizLlave[][n], char *path)
@@ -200,6 +203,7 @@ void cifrar(int n, int matrizLlave[][n], char *palabra, char *path)
 	int vectorCifrado[n];
 	char palabraCifrada[len];
 	int i, j;
+	char guardarLlave = 'n';
 
 	crearMatrizLlave(n, matrizLlave);
 	puts("Esta es la matriz llave:");
@@ -223,8 +227,14 @@ void cifrar(int n, int matrizLlave[][n], char *palabra, char *path)
 	}
 
 	printf("Hecho! La palabra cifrada es: %s.\n", palabraCifrada);
-	escribirMatrizLlave(n, matrizLlave, path);
-	printf("Se ha escrito la matriz llave en: %s\n", path);
+
+	printf(">> Quieres guardar esta matriz llave? (s/N): ");
+	scanf("%c", &guardarLlave);
+	getchar();
+	if (guardarLlave == 's') {
+		escribirMatrizLlave(n, matrizLlave, path);
+		printf("Se ha escrito la matriz llave en: %s\n", path);
+	}
 }
 
 void descifrar(int n, int matrizLlave[][n], char *palabraCifrada, char *path)
@@ -240,7 +250,9 @@ void descifrar(int n, int matrizLlave[][n], char *palabraCifrada, char *path)
 	leerMatrizLlave(n, matrizLlave, path);
 	puts("Mostrando matriz llave recibida:");
 	mostrarMatriz(n, matrizLlave);
+	puts("Mostrando la matriz llave invertida:");
 	invertirMatriz(n, matrizLlave, matrizLlaveInversa);
+	mostrarMatriz(n, matrizLlaveInversa);
 	
 	printf("Teclea la palabra cifrada: ");
 	fgets(palabraCifrada, sizeof(palabraCifrada), stdin);
@@ -259,7 +271,7 @@ void descifrar(int n, int matrizLlave[][n], char *palabraCifrada, char *path)
 		j++;
 	}
 
-	printf("Hecho! La palabra descifrada es: %s\n.", palabra);
+	printf("Hecho! La palabra descifrada es: %s.\n", palabra);
 }
 
 int main(void)
@@ -273,10 +285,10 @@ int main(void)
 	int eleccion;
 
 	eleccion = 0;
-	printf("Cifrado Hill.\n");
-	printf("Quieres cifrar o descifrar un mensaje?\n");
-	printf("1) Cifrar\n");
-	printf("2) Descifrar\n");
+	puts("Cifrado Hill.");
+	puts("Quieres cifrar o descifrar un mensaje?");
+	puts("1) Cifrar");
+	puts("2) Descifrar");
 	printf(">> ");
 	scanf("%d", &eleccion);
 	getchar();
