@@ -105,8 +105,9 @@ void mostrarVector(int n, int vector[n])
         printf("\n");
 }
 
-/* Probablemente podria ser mas eficiente, pero esta fue la solucion a la que
- * llegue.
+/* Esto no es tan trivial como pense...
+ * Necesito encontrar metodos mas sencillos, computacionalmente, para hacer
+ * esto correctamente.
  */
 void invertirMatriz(int n, int matriz[][n], int inversa[][n]) 
 {
@@ -117,7 +118,6 @@ void invertirMatriz(int n, int matriz[][n], int inversa[][n])
 	inversoDet = modulo(det*det, BASE_MOD);
 	printf("Inverso del determinante: %d.\n", inversoDet);
 
-	// Esto es lo que esta mal, creo. Le falta algo.
     	inversa[0][0] = modulo(matriz[1][1] * inversoDet, BASE_MOD);
     	inversa[1][1] = modulo(matriz[0][0] * inversoDet, BASE_MOD);
     	inversa[0][1] = modulo(-1 * matriz[0][1] * inversoDet, BASE_MOD);
