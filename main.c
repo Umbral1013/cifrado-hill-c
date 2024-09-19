@@ -51,7 +51,7 @@ void llenarMatrizAleatorios(int n, int a[][n])
 	for (i=0; i < n; i++)
 		for (j=0; j < n; j++) {
 			// e de entrada.
-			int e = rand() % (max+1 - min) + min;
+			int e = rand() % (MAX+1 - MIN) + MIN;
 			a[i][j] = e;
 		}
 }
@@ -105,11 +105,8 @@ void mostrarVector(int n, int u[n])
  */
 void invertirMatriz(int n, int a[][n], int b[][n])
 {
-    	int det = determinante(n, matriz);
+    	int det = determinante(n, a);
     	int invDet = modulo(det*det, BASE_MOD);
-
-	printf("Determinante: %d.\n", det);
-	printf("Inverso del determinante: %d.\n", invDet);
 
     	b[0][0] = modulo(a[1][1]*invDet, BASE_MOD);
     	b[1][1] = modulo(a[0][0]*invDet, BASE_MOD);
@@ -127,7 +124,7 @@ void escribirMatrizLlave(int n, int m[][n], char *path)
 
 	// Escribir en el archivo.
         int i, j;
-        for (i=0; i < n; i++) {
+        for (i=0; i < n; i++)
         	for (j=0; j < n; j++)
         		fprintf(file, "%d,", m[i][j]);
 
@@ -180,11 +177,11 @@ int caracterANumero(char c)
     	return n;
 }
 
-void inicializarVector(int n, int vector[n])
+void inicializarVector(int n, int u[n])
 {
-	for (int i=0; i < n; i++) {
-		vector[i] = 0;
-	}
+	int i;
+	for (i=0; i < n; i++)
+		u[i] = 0;
 }
 
 void cifrar(int n, int matrizLlave[][n], char *palabra, char *path)
@@ -229,67 +226,68 @@ void cifrar(int n, int matrizLlave[][n], char *palabra, char *path)
 	}
 }
 
-void descifrar(int n, int matrizLlave[][n], char *palabraCifrada, char *path)
+void descifrar(int n, int llave[][n], char *s, char *path)
 {
-	const int len = 50;
+	leerMatrizLlave(n, llave, path);
 
-	int i, j;
-	int matrizLlaveInversa[n][n];
-	int vectorCifrado[n];
-	int vectorMensaje[n];
-	char palabra[len];
+	int invLlave[n][n];
+	invertirMatriz(n, llave, invLlave);
 
-	leerMatrizLlave(n, matrizLlave, path);
-	puts("Mostrando matriz llave recibida:");
-	mostrarMatriz(n, matrizLlave);
+	// Cuando funcione bien, borrare esto.
 	puts("Mostrando la matriz llave invertida:");
-	invertirMatriz(n, matrizLlave, matrizLlaveInversa);
-	mostrarMatriz(n, matrizLlaveInversa);
+	mostrarMatriz(n, invLlave);
 	
-	printf("Teclea la palabra cifrada: ");
-	fgets(palabraCifrada, sizeof(palabraCifrada), stdin);
+	printf(">> Teclea el mensaje cifrado: ");
+	fgets(s, sizeof(s), stdin);
 
-	i = 0;
-	j = 0;
-	while (palabraCifrada[i+1] != '\0') {
-		inicializarVector(n, vectorCifrado);
-		inicializarVector(n, vectorMensaje);
-		vectorCifrado[0] = caracterANumero(palabraCifrada[i]);
-		vectorCifrado[1] = caracterANumero(palabraCifrada[i+1]);
-		vectorPorMatriz(n, vectorCifrado, matrizLlaveInversa, vectorMensaje);
-		palabra[i] = 'A' + vectorMensaje[0];
-		palabra[i+1] = 'A' + vectorMensaje[1];
+	const int LEN = 50;
+	char mensaje[LEN];
+	int i=0;
+	while (s[i++] != '\0') {
+		int u[n];
+		inicializarVector(n, u);
+		int v[n];
+		inicializarVector(n, v);
+
+		u[0] = caracterANumero(s[i]);
+		u[1] = caracterANumero(s[i++]);
+		vectorPorMatriz(n, u, llave, v);
+
+		mensaje[i] = 'A' + v[0];
+		mensaje[i++] = 'A' + v[1];
+
 		i += 2;
-		j++;
 	}
-
-	printf("Hecho! La palabra descifrada es: %s.\n", palabra);
+	printf("El mensaje es: %s.\n", mensaje);
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
-	const int len = 50;
-	const int n = 2;
-
-	int matrizLlave[n][n];
-	char palabra[len];
-	char path[] = "llave.txt";
-	int eleccion;
-
-	eleccion = 0;
-	puts("Cifrado Hill.");
-	puts("Quieres cifrar o descifrar un mensaje?");
-	puts("1) Cifrar");
-	puts("2) Descifrar");
-	printf(">> ");
-	scanf("%d", &eleccion);
-	getchar();
-	
-	switch (eleccion) {
-		case 1: cifrar(n, matrizLlave, palabra, path); break;
-		case 2: descifrar(n, matrizLlave, palabra, path); break;
-		default: printf("Esa opcion no existe.");
+	if (argc != 2) {
+		puts("Uso:");
+		printf("%s 1 (Cifrar un mensaje).\n", argv[0]);
+		printf("%s 2 (Descifrar un mensaje).\n", argv[0]);
+		exit(EXIT_FAILURE);
 	}
 
-	return 0;
+	const int LEN = 50;
+	const int N = 2;
+
+	int llave[N][N];
+	char mensaje[LEN];
+	char path[] = "llave.txt";
+	char *end;
+
+	int modo = strtol(argv[1], &end, 10);
+	switch (modo) {
+		case 1:
+			cifrar(N, llave, mensaje, path);
+			break;
+		case 2:
+			descifrar(N, llave, mensaje, path);
+			break;
+		default: puts("Esa opcion no existe.");
+	}
+
+	exit(EXIT_SUCCESS);
 }
