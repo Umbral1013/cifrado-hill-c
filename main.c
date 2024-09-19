@@ -17,158 +17,150 @@
 #include <string.h>
 #include <ctype.h>
 
+#define MIN 0
+#define MAX 26
 #define BASE_MOD 26
 
 int modulo(int a, int b)
 {
-	int resultado = 0;
-	
-	/* Si el determinante es negativo, tenemos que hacer esto
-	 * para conseguirlo. El compilador de C no es tan listo.
+	/* El compilador de C no es tan listo para sacar
+         * el modulo de un numero negativo.
 	 */
-	if (a < 0) {
-		resultado = b - (-1*a % b);
-	} else {
-		resultado = a % b;
-	}
-
-	return resultado;
+	if (a < 0)
+		return b - (-1*a % b);
+	else
+		return a % b;
 }
 
-int determinante(int n, int matriz[][n])
+int determinante(int n, int a[][n])
 {
-	int determinante = 0;
-
-	determinante = (matriz[0][0]*matriz[1][1]) - (matriz[0][1]*matriz[1][0]);
-	determinante = modulo(determinante, BASE_MOD);
-	return determinante;
+	int det = (a[0][0] * a[1][1]) - (a[0][1] * a[1][0]);
+	det = modulo(det, BASE_MOD);
+	return det;
 }
 
-void llenarMatrizAleatorios(int n, int matriz[][n], int min, int max)
+void llenarMatrizAleatorios(int n, int a[][n])
 {
-	// Impide que min sea mayor que max.
-	if (min > max) return;
-
-	int entrada;
-
+	/* Usar rand() no es buena idea, hablando en el
+	 * contexto de la criptografia. De todos modos, esto es
+	 * solo una demostracion.
+	 */
 	srand(time(NULL));
-	for (int i=0; i < n; i++) {
-		for (int j=0; j < n; j++) {
-			/* Usar rand() no es buena idea, hablando en el
-			 * contexto de la criptografia. De todos modos, esto es
-			 * solo una demostracion.
-			 */
-			entrada = rand() % (max + 1 - min) + min;
-			matriz[i][j] = entrada;
+	
+	int i, j;
+	for (i=0; i < n; i++)
+		for (j=0; j < n; j++) {
+			// e de entrada.
+			int e = rand() % (max+1 - min) + min;
+			a[i][j] = e;
 		}
-	}
 }
 
-void crearMatrizLlave(int n, int matriz[][n])
+void crearMatrizLlave(int n, int a[][n])
 {
-	const int min = 0;
-	const int max = 25;
-
 	int det = 0;
-
 	while (det == 0) {
-		llenarMatrizAleatorios(n, matriz, min, max);
-		det = determinante(n, matriz);
+		llenarMatrizAleatorios(n, a);
+		det = determinante(n, a);
 	}
 }
 
-void vectorPorMatriz(int n, int vector[n], int matriz[][n], int resultado [n])
+/* a es la matriz.
+ * u es el vector.
+ * v es el resultado (un vector).
+ */
+void vectorPorMatriz(int n, int u[n], int a[][n], int v[n])
 {
-	for (int i=0; i < n; i++) {
-                for (int j=0; j < n; j++) {
-			resultado[i] += (vector[j] * matriz[i][j]);
-		}
-		resultado[i] = modulo(resultado[i], BASE_MOD);
+	int i, j;
+	for (i=0; i < n; i++) {
+                for (j=0; j < n; j++)
+			v[i] += u[j] * a[i][j];
+		
+		v[i] = modulo(v[i], BASE_MOD);
 	}
 }
 
-void mostrarMatriz(int n, int matriz[][n])
+void mostrarMatriz(int n, int a[][n])
 {
-	for (int i=0; i < n; i++) {
-		for (int j=0; j < n; j++) {
-			printf("\t%d", matriz[i][j]);
-		}
+	int i, j;
+	for (i=0; i < n; i++) {
+		for (j=0; j < n; j++)
+			printf("\t%d", a[i][j]);
+		
                 printf("\n");
 	}
 }
 
-void mostrarVector(int n, int vector[n])
+void mostrarVector(int n, int u[n])
 {
-	for (int i=0; i < n; i++) {
-            	printf("%d\n",vector[i]);
-	}
+	int i;
+	for (i=0; i < n; i++)
+            	printf("%d\n", u[i]);
+	
         printf("\n");
 }
 
-/* Esto no es tan trivial como pense...
- * Necesito encontrar metodos mas sencillos, computacionalmente, para hacer
- * esto correctamente.
+/* a es la matriz original.
+ * b es a invertida.
  */
-void invertirMatriz(int n, int matriz[][n], int inversa[][n]) 
+void invertirMatriz(int n, int a[][n], int b[][n])
 {
     	int det = determinante(n, matriz);
-    	int inversoDet = 0;
+    	int invDet = modulo(det*det, BASE_MOD);
 
 	printf("Determinante: %d.\n", det);
-	inversoDet = modulo(det*det, BASE_MOD);
-	printf("Inverso del determinante: %d.\n", inversoDet);
+	printf("Inverso del determinante: %d.\n", invDet);
 
-    	inversa[0][0] = modulo(matriz[1][1] * inversoDet, BASE_MOD);
-    	inversa[1][1] = modulo(matriz[0][0] * inversoDet, BASE_MOD);
-    	inversa[0][1] = modulo(-1 * matriz[0][1] * inversoDet, BASE_MOD);
-    	inversa[1][0] = modulo(-1 * matriz[1][0] * inversoDet, BASE_MOD);
+    	b[0][0] = modulo(a[1][1]*invDet, BASE_MOD);
+    	b[1][1] = modulo(a[0][0]*invDet, BASE_MOD);
+    	b[0][1] = modulo( (-1 * a[0][1]*invDet), BASE_MOD);
+    	b[1][0] = modulo( (-1 * a[1][0]*invDet), BASE_MOD);
 }
 
-void escribirMatrizLlave(int n, int matrizLlave[][n], char *path)
+void escribirMatrizLlave(int n, int m[][n], char *path)
 {           
         FILE *file = fopen(path, "w");
         if (file == NULL) {
-                printf("No se pudo abrir el archivo.\n");
+                puts("No se pudo abrir el archivo.");
                 return;
         }
 
 	// Escribir en el archivo.
-        for (int i=0; i < n; i++) {
-        	for (int j=0; j < n; j++) {
-        		fprintf(file, "%d,", matrizLlave[i][j]);
-        	}
-        }
-	
+        int i, j;
+        for (i=0; i < n; i++) {
+        	for (j=0; j < n; j++)
+        		fprintf(file, "%d,", m[i][j]);
+
         fclose(file);
 }
 
 // Via: https://www.youtube.com/watch?v=eKCFnHcIxWc
-void leerMatrizLlave(int n, int matrizLlave[][n], char *path)
+void leerMatrizLlave(int n, int m[][n], char *path)
 {
-	char linea[100];
-	char *entrada;
-        int fila, columna;
-
         // Leer el archivo.
         FILE *file = fopen(path, "r");
         if (file == NULL) {
-                printf("No se pudo abrir el archivo.\n");
+                puts("No se pudo abrir el archivo.");
                 return;
         }
-
-        fila = 0;
-        while (!feof(file)) {
-        	columna = 0;
+	
+        int fila = 0;
+        while ( !feof(file) ) {
+		char linea[100];
         	fscanf(file, "%s", linea);
+		char *entrada;
 		entrada = strtok(linea, ",");
+		
+		int columna = 0;
 		while (entrada != NULL) {
-			matrizLlave[fila][columna] = atoi(entrada);
+			m[fila][columna] = atoi(entrada);
 			columna++;
 			entrada = strtok(NULL, ",");
 		}
 		printf("\n");
 		fila++;
         }
+	
         fclose(file);
 }
 
