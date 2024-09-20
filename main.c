@@ -170,13 +170,6 @@ int caracterANumero(char c)
     	return n;
 }
 
-void inicializarVector(int n, int u[n])
-{
-	int i;
-	for (i=0; i < n; i++)
-		u[i] = 0;
-}
-
 void cifrar(int n, int llave[][n], char *s, char *path)
 {
 	crearLlave(n, llave);
@@ -190,10 +183,8 @@ void cifrar(int n, int llave[][n], char *s, char *path)
 	char cifrada[LEN];
 	int i=0;
 	while (s[i+1] != '\0') {
-		int u[n]; 
-		inicializarVector(n, u);
+		int u[n];
 		int v[n];
-		inicializarVector(n, v);
 
 		u[0] = caracterANumero(s[i]);
 		u[1] = caracterANumero(s[i+1]);
@@ -232,9 +223,7 @@ void descifrar(int n, int llave[][n], char *s, char *path)
 	int i=0;
 	while (s[i+1] != '\0') {
 		int u[n];
-		inicializarVector(n, u);
 		int v[n];
-		inicializarVector(n, v);
 
 		u[0] = caracterANumero(s[i]);
 		u[1] = caracterANumero(s[i+1]);
