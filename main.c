@@ -17,7 +17,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#define MIN 0
+#define MIN 1
 #define BASE_MOD 26
 
 int modulo(int a, int b)
@@ -55,13 +55,38 @@ void llenarMatrizAleatorios(int n, int a[][n])
 		}
 }
 
+int mcd(int a, int b)
+{
+	/* Solo toma enteros positivos.
+         * Casi seguro cometi un error importante.
+         */
+	
+	int r = a % b;
+	if (r == 0)
+		return b;
+	else if (r == 1)
+		return 1;
+	else {
+		if (a > b)
+			r = mcd(b, r);
+		else
+			r = mcd(a, r);
+	}
+}
+
+int esInvertible(int n, int a[][n])
+{
+	if ( mcd(a[0][0], a[0][1]) != 1 )
+		return 0;
+	else
+		return 1;
+}
+
 void crearLlave(int n, int a[][n])
 {
 	// Debemos asegurarnos de que sea invertible.
-	int det = 0;
-	while (det == 0) {
+	while ( !(esInvertible(n, a)) ) {
 		llenarMatrizAleatorios(n, a);
-		det = determinante(n, a);
 	}
 }
 
