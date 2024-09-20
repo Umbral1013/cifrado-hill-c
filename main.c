@@ -57,26 +57,29 @@ void llenarMatrizAleatorios(int n, int a[][n])
 
 int mcd(int a, int b)
 {
-	/* Solo toma enteros positivos.
-         * Casi seguro cometi un error importante.
+        /* Asumimos que a es mayor o igual que b.
          */
+	if (b == 0)
+		return a;
+	
+	if (b > a) {
+		int aux = a;
+		a = b;
+		b = aux;
+	}
 	
 	int r = a % b;
 	if (r == 0)
 		return b;
 	else if (r == 1)
 		return 1;
-	else {
-		if (a > b)
-			r = mcd(b, r);
-		else
-			r = mcd(a, r);
-	}
+	else
+		r = mcd(b, r);
 }
 
 int esInvertible(int n, int a[][n])
 {
-	if ( mcd(a[0][0], a[0][1]) != 1 )
+	if ( (a[0][0] == 0) && (a[1][1] == 0) )
 		return 0;
 	else
 		return 1;
