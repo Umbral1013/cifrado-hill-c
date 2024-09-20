@@ -55,8 +55,9 @@ void llenarMatrizAleatorios(int n, int a[][n])
 		}
 }
 
-void crearMatrizLlave(int n, int a[][n])
+void crearLlave(int n, int a[][n])
 {
+	// Debemos asegurarnos de que sea invertible.
 	int det = 0;
 	while (det == 0) {
 		llenarMatrizAleatorios(n, a);
@@ -95,7 +96,7 @@ void mostrarVector(int n, int u[n])
         printf("\n");
 }
 
-void invertirMatriz(int n, int a[][n], int b[][n])
+void invertirModularMatriz(int n, int a[][n], int b[][n])
 {
     	int det = determinante(n, a);
     	int invDet = modulo(det*det, BASE_MOD);
@@ -106,7 +107,7 @@ void invertirMatriz(int n, int a[][n], int b[][n])
     	b[1][0] = modulo( (-1 * a[1][0]*invDet), BASE_MOD);
 }
 
-void escribirMatrizLlave(int n, int m[][n], char *path)
+void escribirLlave(int n, int m[][n], char *path)
 {           
         FILE *file = fopen(path, "w");
         if (file == NULL) {
@@ -123,7 +124,7 @@ void escribirMatrizLlave(int n, int m[][n], char *path)
         fclose(file);
 }
 
-void leerMatrizLlave(int n, int m[][n], char *path)
+void leerLlave(int n, int m[][n], char *path)
 {
 	// Via: https://www.youtube.com/watch?v=eKCFnHcIxWc
 
@@ -178,7 +179,7 @@ void inicializarVector(int n, int u[n])
 
 void cifrar(int n, int llave[][n], char *s, char *path)
 {
-	crearMatrizLlave(n, llave);
+	crearLlave(n, llave);
 	puts("Se ha generado la siguiente matriz llave:");
 	mostrarMatriz(n, llave);
 
@@ -207,17 +208,17 @@ void cifrar(int n, int llave[][n], char *s, char *path)
 	printf("Hecho! La palabra cifrada es: %s.\n", cifrada);
 	printf(">> Quieres guardar esta matriz llave? (s/N): ");
 	if ( (getchar() == 's') || (getchar() == 'S') ) {
-		escribirMatrizLlave(n, llave, path);
+		escribirLlave(n, llave, path);
 		printf("Se ha escrito la matriz llave en: %s\n", path);
 	}
 }
 
 void descifrar(int n, int llave[][n], char *s, char *path)
 {
-	leerMatrizLlave(n, llave, path);
+	leerLlave(n, llave, path);
 
 	int invLlave[n][n];
-	invertirMatriz(n, llave, invLlave);
+	invertirModularMatriz(n, llave, invLlave);
 
 	// Cuando funcione bien, borrare esto.
 	puts("Mostrando la matriz llave invertida:");
@@ -252,8 +253,8 @@ int main(int argc, char **argv)
 	if (argc != 2) {
 		puts("Uso:");
 		printf("%s <modo>\n", argv[0]);
-		printf("%s 1 <mensaje>\n", argv[0]);
-		printf("%s 2 <mensaje>\n", argv[0]);
+		printf("%s 1 (cifrar)\n", argv[0]);
+		printf("%s 2 (descifrar)\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
 
