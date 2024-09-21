@@ -20,6 +20,54 @@
 #define MIN 1
 #define BASE_MOD 26
 
+int determinante(int n, int a[][n]);
+int esInvertible(int n, int a[][n]);
+int mcd(int a, int b);
+int modulo(int a, int b);
+void cifrar(int n, int llave[][n], char *s, char *path);
+void crearLlave(int n, int a[][n]);
+void descifrar(int n, int llave[][n], char *s, char *path);
+void escribirLlave(int n, int m[][n], char *path);
+void invertirModularMatriz(int n, int a[][n], int b[][n]);
+void leerLlave(int n, int m[][n], char *path);
+void llenarEntradasLlave(int n, int a[][n]);
+void mostrarMatriz(int n, int a[][n]);
+void vectorPorMatriz(int n, int u[n], int a[][n], int v[n]);
+
+int main(int argc, char **argv)
+{
+	if (argc != 2) {
+		puts("Uso:");
+		printf("%s <modo>\n", argv[0]);
+		printf("%s 1 (cifrar)\n", argv[0]);
+		printf("%s 2 (descifrar)\n", argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
+	const int LEN = 50;
+	const int N = 2;
+
+	int llave[N][N];
+	char mensaje[LEN];
+	char path[] = "llave.txt";
+	char *end;
+
+	int modo = strtol(argv[1], &end, 10);
+	switch (modo) {
+		case 1:
+			printf("%d\n", (('B' + 0) - 64) );
+			printf("%d\n", mcd(32, 16)); // BORRAR.
+			cifrar(N, llave, mensaje, path);
+			break;
+		case 2:
+			descifrar(N, llave, mensaje, path);
+			break;
+		default: puts("Esa opcion no existe.");
+	}
+
+	exit(EXIT_SUCCESS);
+}
+
 int modulo(int a, int b)
 {
 	/* El compilador de C no es tan listo para sacar
@@ -38,7 +86,7 @@ int determinante(int n, int a[][n])
 	return det;
 }
 
-void llenarMatrizAleatorios(int n, int a[][n])
+void llenarEntradasLlave(int n, int a[][n])
 {
 	/* Usar rand() no es buena idea, hablando en el
 	 * contexto de la criptografia. De todos modos, esto es
@@ -58,28 +106,28 @@ void llenarMatrizAleatorios(int n, int a[][n])
 int mcd(int a, int b)
 {
         /* Asumimos que a es mayor o igual que b.
-         */
-	if (b == 0)
-		return a;
-	
+        */
 	if (b > a) {
 		int aux = a;
 		a = b;
 		b = aux;
 	}
-	
+
+	if (b == 0)
+		return a;
+
 	int r = a % b;
 	if (r == 0)
 		return b;
 	else if (r == 1)
-		return 1;
+		return r;
 	else
-		r = mcd(b, r);
+		return mcd(b, r);
 }
 
 int esInvertible(int n, int a[][n])
 {
-	if ( (a[0][0] == 0) && (a[1][1] == 0) )
+	if ( (a[0][0] == 0) || (a[1][1] == 0) )
 		return 0;
 	else
 		return 1;
@@ -89,7 +137,7 @@ void crearLlave(int n, int a[][n])
 {
 	// Debemos asegurarnos de que sea invertible.
 	while ( !(esInvertible(n, a)) ) {
-		llenarMatrizAleatorios(n, a);
+		llenarEntradasLlave(n, a);
 	}
 }
 
@@ -113,15 +161,6 @@ void mostrarMatriz(int n, int a[][n])
 
                 printf("\n");
 	}
-}
-
-void mostrarVector(int n, int u[n])
-{
-	int i;
-	for (i=0; i < n; i++)
-            	printf("%d\n", u[i]);
-
-        printf("\n");
 }
 
 void invertirModularMatriz(int n, int a[][n], int b[][n])
@@ -182,22 +221,6 @@ void leerLlave(int n, int m[][n], char *path)
         fclose(file);
 }
 
-int caracterANumero(char c)
-{
-	/* Via: https://stackoverflow.com/a/1469939
- 	 * Regresa -1 si c no es un caracter alfanumerico.
- 	 */
-
-    	int n = -1;
-    	static const char * const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    	char *p = strchr(alphabet, toupper((unsigned char)c));
-
-    	if (p)
-        	n = p - alphabet;
-
-    	return n;
-}
-
 void cifrar(int n, int llave[][n], char *s, char *path)
 {
 	crearLlave(n, llave);
@@ -214,17 +237,18 @@ void cifrar(int n, int llave[][n], char *s, char *path)
 		int u[n];
 		int v[n];
 
-		u[0] = caracterANumero(s[i]);
-		u[1] = caracterANumero(s[i+1]);
-		vectorPorMatriz(n, u, llave, v);
+		// Obtenemos el valor ordinal de la letra en cuestion.
+		u[0] = (s[i] + 0) - 64;
+		u[1] = (s[i+1] + 0) - 64;
 
+		vectorPorMatriz(n, u, llave, v);
 		cifrada[i] = 'A' + v[0];
 		cifrada[i+1] = 'A' + v[1];
 
 		i += 2;
 	}
 
-	printf("Hecho! La palabra cifrada es: %s.\n", cifrada);
+	printf("Hecho! el mensaje cifrado es: %s\n", cifrada);
 	printf(">> Quieres guardar esta matriz llave? (s/N): ");
 	if ( (getchar() == 's') || (getchar() == 'S') ) {
 		escribirLlave(n, llave, path);
@@ -253,8 +277,8 @@ void descifrar(int n, int llave[][n], char *s, char *path)
 		int u[n];
 		int v[n];
 
-		u[0] = caracterANumero(s[i]);
-		u[1] = caracterANumero(s[i+1]);
+		u[0] = (s[i] + 0) - 64;
+		u[1] = (s[i+1] + 0) - 64;
 		vectorPorMatriz(n, u, llave, v);
 
 		mensaje[i] = 'A' + v[0];
@@ -262,37 +286,5 @@ void descifrar(int n, int llave[][n], char *s, char *path)
 
 		i += 2;
 	}
-	printf("El mensaje es: %s.\n", mensaje);
-}
-
-int main(int argc, char **argv)
-{
-	if (argc != 2) {
-		puts("Uso:");
-		printf("%s <modo>\n", argv[0]);
-		printf("%s 1 (cifrar)\n", argv[0]);
-		printf("%s 2 (descifrar)\n", argv[0]);
-		exit(EXIT_FAILURE);
-	}
-
-	const int LEN = 50;
-	const int N = 2;
-
-	int llave[N][N];
-	char mensaje[LEN];
-	char path[] = "llave.txt";
-	char *end;
-
-	int modo = strtol(argv[1], &end, 10);
-	switch (modo) {
-		case 1:
-			cifrar(N, llave, mensaje, path);
-			break;
-		case 2:
-			descifrar(N, llave, mensaje, path);
-			break;
-		default: puts("Esa opcion no existe.");
-	}
-
-	exit(EXIT_SUCCESS);
+	printf("El mensaje es: %s\n", mensaje);
 }
