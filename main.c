@@ -17,7 +17,8 @@
 #include <string.h>
 #include <ctype.h>
 
-#define MIN 1
+#define MIN 0
+#define MAX 25
 #define BASE_MOD 26
 
 int determinante(int n, int a[][n]);
@@ -55,8 +56,6 @@ int main(int argc, char **argv)
 	int modo = strtol(argv[1], &end, 10);
 	switch (modo) {
 		case 1:
-			printf("%d\n", (('B' + 0) - 64) );
-			printf("%d\n", mcd(32, 16)); // BORRAR.
 			cifrar(N, llave, mensaje, path);
 			break;
 		case 2:
@@ -98,7 +97,7 @@ void llenarEntradasLlave(int n, int a[][n])
 	for (i=0; i < n; i++)
 		for (j=0; j < n; j++) {
 			// e de entrada.
-			int e = rand() % (BASE_MOD+1 - MIN) + MIN;
+			int e = rand() % (MAX+1 - MIN) + MIN;
 			a[i][j] = e;
 		}
 }
@@ -127,7 +126,11 @@ int mcd(int a, int b)
 
 int esInvertible(int n, int a[][n])
 {
-	if ( (a[0][0] == 0) || (a[1][1] == 0) )
+	if ((a[0][0] == 0) || (a[1][1] == 0))
+		// Si sus pivotes son 0, no se puede invertir.
+		return 0;
+	else if ( mcd(BASE_MOD, determinante(n, a) ) != 1 )
+		// Significa que no son coprimos.
 		return 0;
 	else
 		return 1;
@@ -166,7 +169,14 @@ void mostrarMatriz(int n, int a[][n])
 void invertirModularMatriz(int n, int a[][n], int b[][n])
 {
     	int det = determinante(n, a);
-    	int invDet = modulo(det*det, BASE_MOD);
+
+    	/* Metodo "ingenuo" de encontrar el inverso del determinante.
+    	 * Via https://www.geeksforgeeks.org/multiplicative-inverse-under-modulo-m/
+    	 */
+    	int x, invDet;
+    	for (x = MIN; x < BASE_MOD; x++)
+    		if ( (det % BASE_MOD) * (x % BASE_MOD) % BASE_MOD == 1 )
+			invDet = x;
 
     	b[0][0] = modulo(a[1][1]*invDet, BASE_MOD);
     	b[1][1] = modulo(a[0][0]*invDet, BASE_MOD);
@@ -176,13 +186,16 @@ void invertirModularMatriz(int n, int a[][n], int b[][n])
 
 void escribirLlave(int n, int m[][n], char *path)
 {           
+	// Abrimos el archivo con permisos de escritura.
         FILE *file = fopen(path, "w");
         if (file == NULL) {
                 puts("No se pudo abrir el archivo.");
                 return;
         }
 
-	// Escribir en el archivo.
+	/* Escribir en el archivo. Por ahora, no escribimos fin de linea, eso
+	 * ocasiona cosas raras...
+	 */
         int i, j;
         for (i=0; i < n; i++)
         	for (j=0; j < n; j++)
@@ -193,9 +206,10 @@ void escribirLlave(int n, int m[][n], char *path)
 
 void leerLlave(int n, int m[][n], char *path)
 {
-	// Via: https://www.youtube.com/watch?v=eKCFnHcIxWc
+	/* Via: https://www.youtube.com/watch?v=eKCFnHcIxWc
+	*/
 
-        // Leer el archivo.
+        // Solamente leemos el archivo.
         FILE *file = fopen(path, "r");
         if (file == NULL) {
                 puts("No se pudo abrir el archivo.");
@@ -230,22 +244,29 @@ void cifrar(int n, int llave[][n], char *s, char *path)
 	printf(">> Teclea la palabra que quieres cifrar: ");
 	fgets(s, sizeof(s), stdin);
 
+	/* Tenemos que convertir la cadena a mayusculas.
+	 * Tendremos que refinar esto mas adelante.
+	 */
+	int i;
+	for (i=0; s[i] != '\0'; i++)
+		s[i] = toupper(s[i]);
+
 	const int LEN = 50;
 	char cifrada[LEN];
-	int i=0;
-	while (s[i+1] != '\0') {
+	// Por que funciona?
+	for (i=0; i < strlen(s)-1; i += 2) {
 		int u[n];
 		int v[n];
 
 		// Obtenemos el valor ordinal de la letra en cuestion.
-		u[0] = (s[i] + 0) - 64;
-		u[1] = (s[i+1] + 0) - 64;
+		printf("%c %d\n", s[i], (s[i] + 0) - 65);
+		u[0] = (s[i] + 0) - 65;
+		printf("%c %d\n", s[i+1], (s[i+1] + 0) - 65);
+		u[1] = (s[i+1] + 0) - 65;
 
 		vectorPorMatriz(n, u, llave, v);
 		cifrada[i] = 'A' + v[0];
 		cifrada[i+1] = 'A' + v[1];
-
-		i += 2;
 	}
 
 	printf("Hecho! el mensaje cifrado es: %s\n", cifrada);
@@ -270,21 +291,29 @@ void descifrar(int n, int llave[][n], char *s, char *path)
 	printf(">> Teclea el mensaje cifrado: ");
 	fgets(s, sizeof(s), stdin);
 
+	/* Tenemos que convertir la cadena a mayusculas.
+	 * Tendremos que refinar esto mas adelante.
+	 */
+	int i;
+	for (i=0; s[i] != '\0'; i++)
+		s[i] = toupper(s[i]);
+
+
 	const int LEN = 50;
 	char mensaje[LEN];
-	int i=0;
-	while (s[i+1] != '\0') {
+	for (i=0; i < strlen(s)-1; i += 2) {
 		int u[n];
 		int v[n];
 
-		u[0] = (s[i] + 0) - 64;
-		u[1] = (s[i+1] + 0) - 64;
+		printf("%c %d\n", s[i], (s[i] + 0) - 65);
+		u[0] = (s[i] + 0) - 65;
+		printf("%c %d\n", s[i+1], (s[i+1] + 0) - 65);
+		u[1] = (s[i+1] + 0) - 65;
 		vectorPorMatriz(n, u, llave, v);
 
 		mensaje[i] = 'A' + v[0];
 		mensaje[i+1] = 'A' + v[1];
-
-		i += 2;
 	}
+
 	printf("El mensaje es: %s\n", mensaje);
 }
