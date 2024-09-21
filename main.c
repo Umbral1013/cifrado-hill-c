@@ -146,6 +146,7 @@ void crearLlave(int n, int a[][n])
 
 void vectorPorMatriz(int n, int u[n], int a[][n], int v[n])
 {
+	// Esto si da resultados correctos?
 	int i, j;
 	for (i=0; i < n; i++) {
                 for (j=0; j < n; j++)
@@ -172,6 +173,7 @@ void invertirModularMatriz(int n, int a[][n], int b[][n])
 
     	/* Metodo "ingenuo" de encontrar el inverso del determinante.
     	 * Via https://www.geeksforgeeks.org/multiplicative-inverse-under-modulo-m/
+    	 * Seria mejor usar el algoritmo extendido de Euclides.
     	 */
     	int x, invDet;
     	for (x = MIN; x < BASE_MOD; x++)
@@ -245,29 +247,13 @@ void cifrar(int n, int llave[][n], char *s, char *path)
 	fgets(s, sizeof(s), stdin);
 
 	/* Tenemos que convertir la cadena a mayusculas.
-	 * Tendremos que refinar esto mas adelante.
+	*/
+
+	/* Luego, codificamos la palabra en matrices de 2x1, es decir,
+	 * segmentos de dos caracteres. Luego, multiplicamos esa matriz de 2x1
+	 * con la llave, para obtener un vector, el mismo segmento de dos
+	 * letras, pero cifrado.
 	 */
-	int i;
-	for (i=0; s[i] != '\0'; i++)
-		s[i] = toupper(s[i]);
-
-	const int LEN = 50;
-	char cifrada[LEN];
-	// Por que funciona?
-	for (i=0; i < strlen(s)-1; i += 2) {
-		int u[n];
-		int v[n];
-
-		// Obtenemos el valor ordinal de la letra en cuestion.
-		printf("%c %d\n", s[i], (s[i] + 0) - 65);
-		u[0] = (s[i] + 0) - 65;
-		printf("%c %d\n", s[i+1], (s[i+1] + 0) - 65);
-		u[1] = (s[i+1] + 0) - 65;
-
-		vectorPorMatriz(n, u, llave, v);
-		cifrada[i] = 'A' + v[0];
-		cifrada[i+1] = 'A' + v[1];
-	}
 
 	printf("Hecho! el mensaje cifrado es: %s\n", cifrada);
 	printf(">> Quieres guardar esta matriz llave? (s/N): ");
@@ -294,26 +280,11 @@ void descifrar(int n, int llave[][n], char *s, char *path)
 	/* Tenemos que convertir la cadena a mayusculas.
 	 * Tendremos que refinar esto mas adelante.
 	 */
-	int i;
-	for (i=0; s[i] != '\0'; i++)
-		s[i] = toupper(s[i]);
 
-
-	const int LEN = 50;
-	char mensaje[LEN];
-	for (i=0; i < strlen(s)-1; i += 2) {
-		int u[n];
-		int v[n];
-
-		printf("%c %d\n", s[i], (s[i] + 0) - 65);
-		u[0] = (s[i] + 0) - 65;
-		printf("%c %d\n", s[i+1], (s[i+1] + 0) - 65);
-		u[1] = (s[i+1] + 0) - 65;
-		vectorPorMatriz(n, u, llave, v);
-
-		mensaje[i] = 'A' + v[0];
-		mensaje[i+1] = 'A' + v[1];
-	}
+	/* Codificamos el mensaje cifrado en matrices de 2x1, y luego
+	 * multiplicamos por la inversa de la llave para conseguir el mensaje
+	 * original en matrices de 2x1.
+	 */
 
 	printf("El mensaje es: %s\n", mensaje);
 }
