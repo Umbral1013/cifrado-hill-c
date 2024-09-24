@@ -51,7 +51,7 @@ int main(int argc, char **argv)
 	int llave[N][N];
 	char mensaje[LEN];
 	char path[] = "llave.txt";
-	char *end;
+	char *end; // Esto es solo para marcar el fin de los argumentos.
 
 	int modo = strtol(argv[1], &end, 10);
 	switch (modo) {
@@ -71,11 +71,9 @@ int modulo(int a, int b)
 {
 	/* El compilador de C no es tan listo para sacar
          * el modulo de un numero negativo.
+         * Nosotros si, esperemos.
 	 */
-	if (a < 0)
-		return b - (-1*a % b);
-	else
-		return a % b;
+	return (a < 0) ? ( b - (-1*a % b) ) : (a % b);
 }
 
 int determinante(int n, int a[][n])
@@ -85,7 +83,7 @@ int determinante(int n, int a[][n])
 	return det;
 }
 
-void llenarEntradasLlave(int n, int a[][n])
+void llenarEntradasLlave(int n, int llave[][n])
 {
 	/* Usar rand() no es buena idea, hablando en el
 	 * contexto de la criptografia. De todos modos, esto es
@@ -97,15 +95,13 @@ void llenarEntradasLlave(int n, int a[][n])
 	for (i=0; i < n; i++)
 		for (j=0; j < n; j++) {
 			// e de entrada.
-			int e = rand() % (MAX+1 - MIN) + MIN;
-			a[i][j] = e;
+			int entrada = rand() % (MAX+1 - MIN) + MIN;
+			llave[i][j] = entrada;
 		}
 }
 
 int mcd(int a, int b)
 {
-        /* Asumimos que a es mayor o igual que b.
-        */
 	if (b > a) {
 		int aux = a;
 		a = b;
@@ -129,7 +125,7 @@ int esInvertible(int n, int a[][n])
 	if ((a[0][0] == 0) || (a[1][1] == 0))
 		// Si sus pivotes son 0, no se puede invertir.
 		return 0;
-	else if ( mcd(BASE_MOD, determinante(n, a) ) != 1 )
+	else if (mcd( BASE_MOD, determinante(n, a) ) != 1)
 		// Significa que no son coprimos.
 		return 0;
 	else
@@ -139,21 +135,24 @@ int esInvertible(int n, int a[][n])
 void crearLlave(int n, int a[][n])
 {
 	// Debemos asegurarnos de que sea invertible.
-	while ( !(esInvertible(n, a)) ) {
+	while ( !( esInvertible(n, a) ) ) {
 		llenarEntradasLlave(n, a);
 	}
 }
 
-void vectorPorMatriz(int n, int u[n], int a[][n], int v[n])
+void inicializarVector(int n, int u[n])
 {
-	// Esto si da resultados correctos?
-	int i, j;
-	for (i=0; i < n; i++) {
-                for (j=0; j < n; j++)
-			v[i] += u[j] * a[i][j];
+	int i;
+	for (i=0; i < n; i++)
+		u[i] = 0;
+}
 
-		v[i] = modulo(v[i], BASE_MOD);
-	}
+void vectorPorMatriz(int n, int u[n], int a[][n], int res[n])
+{
+	res[0] = a[0][0] * u[0] + a[0][1] * u[1];
+	res[0] = modulo(res[0], BASE_MOD);
+	res[1] = a[1][0] * u[0] + a[1][1] * u[1];
+	res[1] = modulo(res[1], BASE_MOD);
 }
 
 void mostrarMatriz(int n, int a[][n])
@@ -237,25 +236,49 @@ void leerLlave(int n, int m[][n], char *path)
         fclose(file);
 }
 
+void formatearEntrada(char *str)
+{
+	// Cambia cada caracter de la cadena a mayusculas.
+	char *c = str;
+	while (*c) {
+		*c = toupper( (unsigned char) *c );
+		c++; // c es un puntero, lo estamos incrementando.
+	}
+}
+
 void cifrar(int n, int llave[][n], char *s, char *path)
 {
 	crearLlave(n, llave);
-	puts("Se ha generado la siguiente matriz llave:");
-	mostrarMatriz(n, llave);
 
 	printf(">> Teclea la palabra que quieres cifrar: ");
 	fgets(s, sizeof(s), stdin);
 
-	/* Tenemos que convertir la cadena a mayusculas.
-	*/
+	// La entrada tiene que tener mas de dos caracteres, sin contar a '\0'.
+	formatearEntrada(s);
 
-	/* Luego, codificamos la palabra en matrices de 2x1, es decir,
-	 * segmentos de dos caracteres. Luego, multiplicamos esa matriz de 2x1
-	 * con la llave, para obtener un vector, el mismo segmento de dos
-	 * letras, pero cifrado.
-	 */
+	// Numero requerido para convertir a la clave.
+	const int N_CONVERSION = 65; 
+
+	int i;
+	char cifrada[strlen(s) + 1];
+	for (i=0; i < strlen(s) - 1; i++) {
+		int u[n];
+		int v[n];
+
+		printf("%d: %c, %d\n", i, s[i], s[i] - N_CONVERSION);
+		u[0] = s[i] - N_CONVERSION;
+		u[1] = s[i+1] - N_CONVERSION;
+
+		vectorPorMatriz(n, u, llave, v);
+		printf("%d: %c, %d\n", i, v[i] + 'A', v[i]);
+
+		cifrada[i] = 'A' + v[i];
+		cifrada[i+1] = 'A' + v[i+1];
+	}
 
 	printf("Hecho! el mensaje cifrado es: %s\n", cifrada);
+
+	mostrarMatriz(n, llave);
 	printf(">> Quieres guardar esta matriz llave? (s/N): ");
 	if ( (getchar() == 's') || (getchar() == 'S') ) {
 		escribirLlave(n, llave, path);
@@ -277,14 +300,23 @@ void descifrar(int n, int llave[][n], char *s, char *path)
 	printf(">> Teclea el mensaje cifrado: ");
 	fgets(s, sizeof(s), stdin);
 
-	/* Tenemos que convertir la cadena a mayusculas.
-	 * Tendremos que refinar esto mas adelante.
-	 */
+	formatearEntrada(s);
 
-	/* Codificamos el mensaje cifrado en matrices de 2x1, y luego
-	 * multiplicamos por la inversa de la llave para conseguir el mensaje
-	 * original en matrices de 2x1.
-	 */
+	int i = 0;
+	char *c = s;
+	char mensaje[sizeof(s)]; // Podria ser mejor.
+	while (*c) {
+		int u[n];
+		int v[n];
+		u[0] = (*c + 0) - 65;
+		u[1] = (*c + 0) - 65;
+
+		vectorPorMatriz(n, u, llave, v);
+		mensaje[i] = 'A' + v[0];
+		mensaje[i+1] = 'A' + v[1];
+
+		i++;
+	}
 
 	printf("El mensaje es: %s\n", mensaje);
 }

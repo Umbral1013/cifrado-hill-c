@@ -9,3 +9,5 @@ Autores:
  - Eduardo Alejandro Enriquez Velazquez
  - Lilia Sofia Betancourt Haro
  - Alexis Gabriel Centeno Uribe
+
+El objetivo, desafortunadamente, no se ha podido alcanzar. Probablemente lo retome despues.
